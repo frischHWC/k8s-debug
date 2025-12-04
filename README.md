@@ -13,7 +13,10 @@ Have kubectl installed with a configured kubeconfig file.
 $ ./get_k8s_info.sh
 ```
 
-An output directory will be created with the following structure:
-- logs
-- cm (for config maps)
-- node (for nodes)
+An output directory will be created with multiple sub-directories and a tar.gz file compressing all output in one file will be made if ``--archive=true``.
+
+Get all options with:
+
+```bash
+$ ./get_k8s_info.sh --help
+```
