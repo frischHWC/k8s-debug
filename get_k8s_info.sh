@@ -20,7 +20,7 @@
 
 
 export NS="mistral-ai-suite"
-export OUTPUT_DIR="output_dir-$(date +%Y-%m-%d-%H-%M-%S)"
+export OUTPUT_DIR="/tmp/output_dir-$(date +%Y-%m-%d-%H-%M-%S)"
 export SCOPE="all"
 export ARCHIVE=true
 export FROM_LAST_X_MINUTES="60"
