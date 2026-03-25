@@ -1,13 +1,13 @@
 # Debug k8s
 
-Small scripts to gather different informations on a k8s cluster for debugging purposes.
+Small scripts to gather different informations on a k8s cluster.
 
 
 ## Requirements
 
 Have kubectl installed with a configured kubeconfig file.
 
-## Usage
+## K8s Debugging: Logs & Information
 
 ```bash
 $ ./get_k8s_info.sh
@@ -20,3 +20,10 @@ Get all options with:
 ```bash
 $ ./get_k8s_info.sh --help
 ```
+
+## Checking root user on pods
+
+```bash
+$ ./check_root.sh
+```
+

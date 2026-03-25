@@ -29,7 +29,7 @@ export DEBUG=false
 
 function usage()
 {
-    echo "This script aims to create, start, stop or delete a Cloudera Public Cloud Cluster"
+    echo "This script aims to gather logs and information on a k8s namespace"
     echo ""
     echo "Usage is the following : "
     echo ""
