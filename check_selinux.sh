@@ -45,7 +45,7 @@ done
 PODS=$(kubectl get pods -n "$NAMESPACE" -o jsonpath='{.items[*].metadata.name}')
 
 echo "Output will be: "
-echo " POD_NAME ; CONTAINER_NAME ; USER_ID_FROM_COMMAND ; USER_ID_FROM_SECURITY_CONTEXT : ❌/✅"
+echo " POD_NAME ; CONTAINER_NAME ; SELINUX_FROM_COMMAND ; SELINUX_FROM_SECURITY_CONTEXT : ❌/✅"
 
 # Check each pod
 for POD in $PODS; do
@@ -56,31 +56,33 @@ for POD in $PODS; do
         # Extract the runAsUser from the security context
         SECURITY_CONTEXT_USER_ID=$(kubectl get pod "$POD" -n "$NAMESPACE" -o jsonpath="{.spec.containers[?(@.name==\"$CONTAINER\")].securityContext.runAsUser}")
 
-        # If runAsUser is not set, check the pod-level security context
-        if [ -z "$SECURITY_CONTEXT_USER_ID" ]; then
-            SECURITY_CONTEXT_USER_ID=$(kubectl get pod "$POD" -n "$NAMESPACE" -o jsonpath="{.spec.securityContext.runAsUser}")
+        # Extract the SELinux context from the security context
+        SECURITY_CONTEXT_SELINUX=$(kubectl get pod "$POD" -n "$NAMESPACE" -o jsonpath="{.spec.containers[?(@.name==\"$CONTAINER\")].securityContext.seLinuxOptions}")
+        # If SELinux is not set, check the pod-level security context
+        if [ -z "$SECURITY_CONTEXT_SELINUX" ]; then
+            SECURITY_CONTEXT_SELINUX=$(kubectl get pod "$POD" -n "$NAMESPACE" -o jsonpath="{.spec.securityContext.seLinuxOptions}")
         fi
-
-        # If runAsUser is still not set
-        if [ -z "$SECURITY_CONTEXT_USER_ID" ]; then
-            SECURITY_CONTEXT_USER_ID="Not set (default)"
+        # If SELinux is still not set, assume default
+        if [ -z "$SECURITY_CONTEXT_SELINUX" ]; then
+            SECURITY_CONTEXT_SELINUX="Not set (default)"
         fi
 
         # Execute a command inside the pod to check the actual user ID
-        ACTUAL_USER_ID=$(kubectl exec "$POD" -n "$NAMESPACE" -c "$CONTAINER" -- id -u 2>/dev/null)
+         # Execute a command inside the pod to check the actual SELinux context
+        ACTUAL_SELINUX_CONTEXT=$(kubectl exec "$POD" -n "$NAMESPACE" -c "$CONTAINER" -- cat /proc/1/attr/current 2>/dev/null)
 
         if [ $? -ne 0 ]; then
             if [ "$DEBUG" = "true" ] ; then
                 echo "DEBUG: Not able to run command on pod: $POD in container: $CONTAINER"
             fi
-            ACTUAL_USER_ID="NotFound"
+            ACTUAL_SELINUX_CONTEXT="NotFound"
         fi
 
         # Check if the actual user is root
-        if [ "$ACTUAL_USER_ID" = "0" ] || [ "$SECURITY_CONTEXT_USER_ID" = "0" ] || [[ "$SECURITY_CONTEXT_USER_ID" =~ "root" ]]  ; then
-            echo "$POD ; $CONTAINER ; $ACTUAL_USER_ID ; $SECURITY_CONTEXT_USER_ID : ❌"
+        if [ "$SECURITY_CONTEXT_SELINUX" = "0" ] || [ "$SECURITY_CONTEXT_SELINUX" = "0" ] || [[ "$SECURITY_CONTEXT_SELINUX" =~ "disabled" ]]  ; then
+            echo "$POD ; $CONTAINER ; $ACTUAL_SELINUX_CONTEXT ; $SECURITY_CONTEXT_SELINUX : ❌"
         else
-            echo "$POD ; $CONTAINER ; $ACTUAL_USER_ID ; $SECURITY_CONTEXT_USER_ID : ✅"
+            echo "$POD ; $CONTAINER ; $ACTUAL_SELINUX_CONTEXT ; $SECURITY_CONTEXT_SELINUX : ✅"
         fi
     done
 done
